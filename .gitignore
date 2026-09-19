@@ -1,0 +1,10 @@
+# Fichiers de compilation GCC
+*.o
+*.elf
+*.hex
+*.bin
+*.map
+
+# Fichiers temporaires Proteus
+*.pdsbak
+*.workspace
