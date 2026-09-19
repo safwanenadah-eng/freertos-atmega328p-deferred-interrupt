@@ -19,7 +19,7 @@ Dans les systèmes critiques embarqués (Aéronautique, Défense, Automobile) :
 
 ## ⚙️ Architecture & Mécanisme de Synchronisation
 
-
+```
 [Bouton Hardware (PD2/INT0)]
              │
              ▼ (Front Descendant)
@@ -35,7 +35,7 @@ Dans les systèmes critiques embarqués (Aéronautique, Défense, Automobile) :
 |  xSemaphoreTake() == TRUE  |
 |  Traite l'événement (UART) |
 +----------------------------+
----
+```
 
 ## 🛠️ Stack Technique
 
