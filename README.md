@@ -1,66 +1,68 @@
-# FreeRTOS ATmega328P - Deferred Interrupt Processing (Interruption Différée)
+# FreeRTOS ATmega328P - Deferred Interrupt Processing
 
-Ce projet illustre l'implémentation du pattern **Deferred Interrupt Processing** sous **FreeRTOS** sur un microcontrôleur **ATmega328P** (Arduino Uno), simulé sous **Proteus VSM**.
-
----
-
-## 🎯 Pourquoi cette architecture dans la réalité ? (Cas d'usage industriel)
-
-Dans les systèmes critiques embarqués (Aéronautique, Défense, Automobile) :
-- **Règle absolue :** Une routine d'interruption (**ISR**) doit être la plus courte possible (quelques microsecondes) pour ne pas bloquer le système ni rater d'autres interruptions matérielles prioritaires.
-- **Problématique :** Traiter un événement (ex: lire un capteur via I2C/SPI, formater un paquet réseau, écrire sur l'UART) demande trop de cycles CPU pour être fait directement dans l'ISR.
-
-### 🚁 Applications concrètes en industrie :
-1. **Systèmes de commandes de vol (Aéronautique) :** Une ISR détecte une impulsion sur un capteur de position/accélération, donne un sémaphore binaire, puis redonne immédiatement la main. La tâche de calcul ajuste les gouvernes en arrière-plan.
-2. **Capteurs industriels / Radar :** Réception d'un signal d'alerte matériel. L'ISR valide l'événement, la tâche dédiée exécute l'algorithme de filtrage lourd.
-3. **Boutons & Entrées Homme-Machine (HMI) :** Détection instantanée de l'appui bouton en ISR sans bloquer le reste des tâches temps réel.
+This project illustrates the implementation of the **Deferred Interrupt Processing** pattern under **FreeRTOS** on an **ATmega328P** microcontroller (Arduino Uno), simulated in **Proteus VSM**.
 
 ---
 
-## ⚙️ Architecture & Mécanisme de Synchronisation
+## 🎯 Why This Architecture in the Real World? (Industrial Use Case)
+
+In critical embedded systems (Aerospace, Defense, Automotive):
+- **Absolute rule:** An interrupt service routine (**ISR**) must be as short as possible (a few microseconds) so it doesn't block the system or miss other higher-priority hardware interrupts.
+- **Problem:** Processing an event (e.g., reading a sensor via I2C/SPI, formatting a network packet, writing to UART) requires too many CPU cycles to be done directly inside the ISR.
+
+### 🚁 Concrete Industrial Applications:
+1. **Flight Control Systems (Aerospace):** An ISR detects a pulse from a position/acceleration sensor, gives a binary semaphore, then immediately returns control. The computation task adjusts control surfaces in the background.
+2. **Industrial Sensors / Radar:** Reception of a hardware alert signal. The ISR validates the event, and a dedicated task runs the heavy filtering algorithm.
+3. **Buttons & Human-Machine Interfaces (HMI):** Instant detection of a button press in the ISR without blocking the rest of the real-time tasks.
+
+---
+
+## ⚙️ Architecture & Synchronization Mechanism
 
 ```
-[Bouton Hardware (PD2/INT0)]
+[Hardware Button (PD2/INT0)]
              │
-             ▼ (Front Descendant)
+             ▼ (Falling Edge)
 +----------------------------+
-|      ISR (INT0_vect)       |  <-- S'exécute en quelques µs
+|      ISR (INT0_vect)       |  <-- Executes in a few µs
 | xSemaphoreGiveFromISR()    |
 | taskYIELD()                |
 +----------------------------+
-             │ (Libère xButtonSemaphore)
+             │ (Releases xButtonSemaphore)
              ▼
 +----------------------------+
-|  vButtonHandlerTask (RTOS) |  <-- Débloquée immédiatement (Priorité haute)
+|  vButtonHandlerTask (RTOS) |  <-- Immediately unblocked (High priority)
 |  xSemaphoreTake() == TRUE  |
-|  Traite l'événement (UART) |
+|  Processes the event (UART)|
 +----------------------------+
 ```
 
-## 🛠️ Stack Technique
+## 🛠️ Technical Stack
 
-- **Microcontrôleur :** ATmega328P @ 16 MHz
-- **RTOS :** FreeRTOS v9.0.0 (Portage AVR/GCC)
-- **Toolchain :** avr-gcc, avr-libc, Make
-- **Simulation :** Proteus VSM (Virtual Terminal)
-
----
-
-## 📸 Résultats de la Simulation
-
-![Résultat Simulation Terminal](docs/terminal_result.png)
-
-Le Terminal Virtuel confirme le déclenchement de l'interruption matérielle et son traitement immédiat dans le contexte de la tâche FreeRTOS.
+- **Microcontroller:** ATmega328P @ 16 MHz
+- **RTOS:** FreeRTOS v9.0.0 (AVR/GCC port)
+- **Toolchain:** avr-gcc, avr-libc, Make
+- **Simulation:** Proteus VSM (Virtual Terminal)
 
 ---
 
-## 🚀 Compilation & Exécution
+## 📸 Simulation Results
 
-### 1. Compilation via Makefile
+![Terminal simulation result](docs/terminal_result.png)
+
+The Virtual Terminal confirms the hardware interrupt trigger and its immediate handling within the FreeRTOS task context.
+
+---
+
+## 🚀 Build & Run
+
+### 1. Build via Makefile
+```bash
 make clean
 make
+```
 
-### 2. Simulation sous Proteus
-1. Charger le fichier .elf ou .hex généré dans l'ATmega328P.
-2. Vérifier le câblage du terminal virtuel (TXD/RXD croisés) et du bouton sur PD2/INT0.
-3. Lancer la simulation et appuyer sur le bouton pour observer le traitement en temps réel.
+### 2. Simulation in Proteus
+1. Load the generated `.elf` or `.hex` file onto the ATmega328P.
+2. Check the wiring of the virtual terminal (crossed TXD/RXD) and the button on PD2/INT0.
+3. Run the simulation and press the button to observe real-time processing.
